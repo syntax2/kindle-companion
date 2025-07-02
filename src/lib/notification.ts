@@ -1,12 +1,14 @@
 import webpush from 'web-push';
+import type { PushSubscription } from 'web-push';
 
 // This is a reusable function to send any notification.
-export async function sendPushNotification(subscription: webpush.PushSubscription, title: string, body: string) {
+// It is now the ONLY place where web-push is configured.
+export async function sendPushNotification(subscription: PushSubscription, title: string, body: string) {
   
   // --- THE FIX ---
-  // We will now set the VAPID details every time, right before we send.
-  // This guarantees that our server is always authenticated.
-  // This is a robust solution that solves the 401 error.
+  // We configure the VAPID details INSIDE the function.
+  // This ensures it only runs at runtime, not during the build process,
+  // which solves the Vercel deployment error.
   webpush.setVapidDetails(
     'mailto:ashishkadian239@gmail.com', // Replace with your email
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
@@ -16,7 +18,7 @@ export async function sendPushNotification(subscription: webpush.PushSubscriptio
   const payload = JSON.stringify({ title, body });
   
   try {
-    console.log("Sending notification with payload:", payload);
+    console.log("Attempting to send notification...");
     await webpush.sendNotification(subscription, payload);
     console.log("Notification sent successfully.");
   } catch (error) {
