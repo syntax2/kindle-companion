@@ -1,27 +1,23 @@
-
 import { NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { promises as fs } from 'fs';
+import path from 'path';
+import os from 'os';
+import { sendPushNotification } from '@/lib/notification'; // We will create this helper
 
-// This is a trick to persist the subscription in memory during local development
-// across Next.js hot reloads.
-const globalForStore = global as typeof global & {
-  subscription: PushSubscription | null;
-};
+// This creates a reliable path to a temp file that works on Windows, Mac, and Linux.
+const subscriptionFilePath = path.join(os.tmpdir(), 'subscription.json');
 
 export async function POST(request: Request) {
   try {
     const subscription = await request.json();
-    console.log('Received subscription:', subscription);
+    console.log('Received subscription, saving to file...');
+    
+    // Write the subscription object to the file.
+    await fs.writeFile(subscriptionFilePath, JSON.stringify(subscription));
 
-    if (process.env.NODE_ENV === 'production') {
-      // In production, save to Vercel KV
-      await kv.set('push_subscription', JSON.stringify(subscription));
-      console.log('Subscription saved to Vercel KV.');
-    } else {
-      // In development, save to our in-memory global store
-      globalForStore.subscription = subscription;
-      console.log('Subscription saved to in-memory store for local development.');
-    }
+    // --- NEW FEATURE: Send an immediate welcome notification ---
+    console.log('Sending welcome notification...');
+    await sendPushNotification(subscription, "Welcome to Kindle Companion!", "You're all set! We'll send you inspiring nudges to help you read more.");
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
