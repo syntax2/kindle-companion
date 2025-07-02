@@ -1,10 +1,24 @@
-
 import { NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { kv } from '@vercel/kv';
 
+// Type definitions for better TypeScript support
+interface PushSubscriptionData {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
+// Extend global namespace for development storage
+declare global {
+  var subscription: PushSubscriptionData | null | undefined;
+}
+
 // --- My Hand-Crafted Quotes ---
 const myQuotes = [
+  // Original 30
   "A single chapter can be the anchor for your entire day. What story will you live today?",
   "The person you will be in five years depends on the books you read today. Time to invest in your future self.",
   "Don't just read to finish a book. Read to start a conversation with yourself.",
@@ -34,12 +48,43 @@ const myQuotes = [
   "The goal isn't to read a hundred books, but to let one book read you a hundred times.",
   "Every author has spent years crafting the words you can read in hours. It's the best deal in the world.",
   "Listening to a great story is like letting a friend tell you a secret. Time to listen in.",
-  "Develop a passion for learning, because if you do, you will never cease to grow."
+  "Develop a passion for learning, because if you do, you will never cease to grow.",
+  // New 30
+  "The ink on the page is a bridge to another soul. Walk across it.",
+  "Your future self is begging you to read that book you keep putting off. Don't let them down.",
+  "A book is a time machine. Where will you travel tonight? To the past, the future, or a world that never was?",
+  "Ten minutes of reading is a small deposit in the bank of your knowledge. The compound interest is extraordinary.",
+  "The world is loud. A book is a sanctuary. Step inside and find your quiet.",
+  "An audiobook in your ears is a private university where you are the only student.",
+  "The most successful people have one thing in common: they are voracious learners. Their primary tool? Books.",
+  "Don't let the day end without planting a new idea in your mind. A book is the most fertile ground.",
+  "That story you're in the middle of? Its world has been paused, waiting for you to press play.",
+  "To read is to empower your mind. To not read is to leave it defenseless.",
+  "The quality of your thoughts is determined by the quality of your inputs. Choose a great book.",
+  "A single sentence can change your life. There are thousands of them waiting for you in the book you're reading.",
+  "The heroes of your story are facing their challenges. It's time for you to join them.",
+  "Reading a book is a silent conversation with the author. What questions will you ask tonight?",
+  "Escape the algorithm. A book is a curated experience, chosen by you, for you.",
+  "The beautiful thing about learning is that no one can take it away from you. Let's learn something new.",
+  "Your mind is a garden. Reading is the water. Don't let it go thirsty.",
+  "An hour spent reading is an hour invested directly in your own evolution.",
+  "The day is done. Let go of its demands and fall into a story.",
+  "You can't buy more time, but you can live a thousand lives by reading books.",
+  "That audiobook isn't just a file on your phone; it's a mentor whispering in your ear.",
+  "The solutions to your biggest challenges are often hidden in the pages of a book.",
+  "Reading is the ultimate act of self-care. It's time to take care of yourself.",
+  "A story is the shortest path between a human being and the truth. Let's find some truth tonight.",
+  "The world's greatest wisdom is available to you for the price of a book and a little of your time.",
+  "Don't just be a consumer of information. Be a student of knowledge. Open your book.",
+  "The end of a chapter is the perfect place to end the day.",
+  "Let a story be the bridge from your busy day to a peaceful night's sleep.",
+  "Every book you finish is a new lens through which you can see the world.",
+  "The journey is long, but the next page is close. Take the next step."
 ];
 
 // Configure web-push with your VAPID keys
 webpush.setVapidDetails(
-  'mailto:your-email@example.com',
+  'mailto:ashishkadian239@gmail.com',
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );
@@ -86,13 +131,27 @@ async function getMotivationalQuote(): Promise<string> {
 }
 
 export async function GET() {
-  // Retrieve the saved subscription from Vercel KV
-  const subscriptionString = await kv.get<string>('push_subscription');
+  let subscription: PushSubscriptionData | null | undefined;
 
-  if (!subscriptionString) {
+  if (process.env.NODE_ENV === 'production') {
+    // In production, retrieve from Vercel KV
+    const subscriptionString = await kv.get<string>('push_subscription');
+    if (subscriptionString) {
+      try {
+        subscription = JSON.parse(subscriptionString);
+      } catch (error) {
+        console.error('Failed to parse subscription from KV:', error);
+        return NextResponse.json({ error: 'Invalid subscription data' }, { status: 400 });
+      }
+    }
+  } else {
+    // In development, retrieve from our global store
+    subscription = global.subscription;
+  }
+
+  if (!subscription) {
     return NextResponse.json({ error: 'No subscription found' }, { status: 404 });
   }
-  const subscription = JSON.parse(subscriptionString);
 
   try {
     const quote = await getMotivationalQuote();
@@ -101,15 +160,29 @@ export async function GET() {
       body: quote,
     });
 
-    await webpush.sendNotification(subscription, payload);
+    // Send notification with proper typing
+    await webpush.sendNotification(subscription as webpush.PushSubscription, payload);
 
     return NextResponse.json({ success: true, message: 'Notification sent!' });
   } catch (error) {
-    console.error(error);
+    console.error('Push notification error:', error);
+    
     // If a subscription is invalid, it should be deleted.
-    if (error instanceof Error && 'statusCode' in error && error.statusCode === 410) {
-      await kv.del('push_subscription');
+    interface StatusCodeError extends Error {
+      statusCode?: number;
     }
+    function hasStatusCode(err: unknown): err is StatusCodeError {
+      return typeof err === 'object' && err !== null && 'statusCode' in err && typeof (err as { statusCode?: unknown }).statusCode === 'number';
+    }
+    if (error instanceof Error && hasStatusCode(error) && error.statusCode === 410) {
+      if (process.env.NODE_ENV === 'production') {
+        await kv.del('push_subscription');
+      } else {
+        global.subscription = null;
+      }
+      return NextResponse.json({ error: 'Subscription expired and removed' }, { status: 410 });
+    }
+    
     return NextResponse.json({ error: 'Failed to send notification' }, { status: 500 });
   }
 }

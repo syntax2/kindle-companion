@@ -1,21 +1,19 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Sun, Moon, Bell, BellOff, Zap } from 'lucide-react';
+import { Sun, Moon, Bell, BellOff, Zap, RefreshCw } from 'lucide-react';
 
 type NotificationStatus = 'default' | 'granted' | 'denied' | 'loading';
 
 export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [status, setStatus] = useState<NotificationStatus>('loading');
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
-    // Set theme
     if (isDarkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
     
-    // Set initial notification status after component mounts
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setStatus(Notification.permission as NotificationStatus);
     }
@@ -32,16 +30,12 @@ export default function HomePage() {
 
     if (permission === 'granted') {
       try {
-        // Register the service worker
         await navigator.serviceWorker.register('/sw.js');
-        // Get the service worker registration
         const registration = await navigator.serviceWorker.ready;
-        // Get the push subscription
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
         });
-        // Send the subscription to our backend to save it
         await fetch('/api/subscribe', {
           method: 'POST',
           body: JSON.stringify(subscription),
@@ -53,20 +47,47 @@ export default function HomePage() {
     }
   };
 
+  const handleReset = async () => {
+    setIsResetting(true);
+    try {
+      const response = await fetch('/api/unsubscribe', { method: 'POST' });
+      if (!response.ok) throw new Error('Failed to unsubscribe on the server.');
+      
+      // This is the fix: We now manually update the state to show the subscribe button again.
+      setStatus('default');
+
+    } catch (error) {
+      console.error('Failed to reset subscription:', error);
+      alert('Could not reset subscription. Please try again.');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   const StatusDisplay = () => {
     switch (status) {
       case 'granted':
         return (
-          <div className="flex items-center justify-center space-x-2 text-green-500">
-            <Bell size={20} />
-            <span>Notifications are enabled. You're all set!</span>
+          <div className="space-y-4">
+            <div className="flex items-center justify-center space-x-2 text-green-500">
+              <Bell size={20} />
+              <span>Notifications are enabled. Youre all set!</span>
+            </div>
+            <button
+              onClick={handleReset}
+              disabled={isResetting}
+              className="w-full flex items-center justify-center bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-all duration-300 disabled:bg-gray-400"
+            >
+              <RefreshCw className={`mr-2 ${isResetting ? 'animate-spin' : ''}`} size={16} />
+              {isResetting ? 'Resetting...' : 'Reset Subscription'}
+            </button>
           </div>
         );
       case 'denied':
         return (
           <div className="flex items-center justify-center space-x-2 text-red-500">
             <BellOff size={20} />
-            <span>Notifications are blocked. Please enable them in your browser settings.</span>
+            <span>Notifications are blocked in browser settings.</span>
           </div>
         );
       default:
@@ -104,4 +125,3 @@ export default function HomePage() {
     </div>
   );
 }
-
