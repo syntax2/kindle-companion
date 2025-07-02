@@ -31,7 +31,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { sendPushNotification } from '@/lib/notification'; // We will use our helper
-
+export const runtime = 'nodejs';
 // We need to import the quotes here as well
 import { myQuotes } from '../cron/send-notification/route';
 
