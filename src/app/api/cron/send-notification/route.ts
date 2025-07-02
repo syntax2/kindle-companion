@@ -198,7 +198,7 @@ const subscriptionFilePath = path.join('/tmp', 'subscription.json');
 
 // As requested, this is a placeholder for your brilliant quotes.
 // --- My Hand-Crafted Quotes ---
-const myQuotes: string[] = [
+export const myQuotes: string[] = [
   // Original 30
   "A single chapter can be the anchor for your entire day. What story will you live today?",
   "The person you will be in five years depends on the books you read today. Time to invest in your future self.",
@@ -260,12 +260,43 @@ const myQuotes: string[] = [
   "The end of a chapter is the perfect place to end the day.",
   "Let a story be the bridge from your busy day to a peaceful night's sleep.",
   "Every book you finish is a new lens through which you can see the world.",
-  "The journey is long, but the next page is close. Take the next step."
+  "The journey is long, but the next page is close. Take the next step.",
+  // Final 30
+  "The answer to the toughest interview question you'll ever face is hidden in a chapter you haven't read yet. Prepare for your future tonight.",
+  "Your resume lists your skills, but your conversation reveals your knowledge. Every book you read is a direct upgrade to your ability to impress.",
+  "That job you want, that promotion you're aiming for? The person who gets it will be the one who knows more. The library is open.",
+  "Don't just work hard. Work smart. The smartest people in the world have written down their secrets for you. All you have to do is read them.",
+  "An audiobook on your commute is a private lecture from a world-class expert. Arrive at work smarter than when you left home.",
+  "Every book on business, technology, or psychology is a cheat code for your career. It's time to level up.",
+  "The confidence you need in the boardroom is built during the quiet hours you spend with a book.",
+  "Being 'well-read' isn't an old-fashioned idea. It's a secret weapon that makes you more interesting, more articulate, and more hireable.",
+  "The market changes, but the principles of success do not. Learn them from the masters who wrote them down.",
+  "That technical problem at work? Someone, somewhere, has already solved it and written a book about it. Find their solution.",
+  "A habit is built in moments of decision. The moment is now. The decision is one page.",
+  "Don't break the chain. A single chapter tonight keeps the momentum alive for tomorrow.",
+  "Your mind is a muscle. This is its daily training. Don't skip leg day, and don't skip page day.",
+  "The version of you that is disciplined, focused, and wise is not born, it is built. The building material is books.",
+  "Willpower is finite, but a habit is automatic. Do it now, and make it easier for your future self.",
+  "The book doesn't care if you're tired. It will wait. But your growth depends on you showing up.",
+  "Treat this like a promise to yourself. A promise to be a little calmer and a little smarter than you were yesterday.",
+  "The resistance you feel is the sign that this is important. Push through it. The reward is on the other side.",
+  "One page is a victory. Ten pages is a triumph. A chapter is a conquest. Choose your victory for tonight.",
+  "The story is paused. The characters are waiting. The world you left behind is ready for your return.",
+  "You cannot live all the lives, but through books, you can learn from them all. It's the ultimate shortcut to wisdom.",
+  "Reading is the practice of empathy. By understanding the lives of others, you become better at living your own.",
+  "Every book is a new tool for your mind. The more tools you have, the better you can build your life.",
+  "The problems you face are not unique. The greatest minds in history have faced them too. Their advice is waiting for you.",
+  "A library is not a luxury, but one of the necessities of life. Your personal library is in your mind.",
+  "To be interesting, be interested. Reading is the fastest way to become interested in everything.",
+  "The quality of your decisions is a reflection of your knowledge. Read widely, and decide wisely.",
+  "Don't just read for answers. Read to find better questions.",
+  "A mind expanded by a new idea never returns to its original dimensions. It's time to expand.",
+  "The conversation you have with yourself is the most important one. Reading gives you better things to talk about."
 ];
 
 // Configure web-push with your VAPID keys from the .env.local file
 webpush.setVapidDetails(
-  'mailto:your-email@example.com', // Replace with your email
+  'mailto:ashishkadian239@gmail.com', // Replace with your email
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );
